@@ -2,34 +2,6 @@
   (:refer-clojure :exclude [==])
   (:use clojure.core.logic))
 
-; -----------------------------------------------------------
-; shoveling in
-;
-; for now: check all rules at every shovel-in (if so configured)
-; later on: analyze to see when which kinds of facts about the state
-;           are accessed, and make a map from those to their containing goals
-;           and then map all those goals to all their containing goals
-;           so map an expression to a list of containing goals
-
-;           hence make the (state-fact .. macro)
-;           register its structures with that registry
-
-; 
-; one can define shovel-rules that all get called on the incoming shoveled item
-; using doseq
-; i bet this is some kind of inbuilt thing and has a real name:
-(defn giaku-foreach [funs item]
-  "Applies a seq of functions to an item. Used for side-effects."
-  (doseq [f funs]
-    (f item)))
-
-(defn shovel-in [item shovels rules]
-  "Assert (shovel) attributes of new item. Then check all rules and return their success/failure messages."
-  (do
-    (giaku-foreach shovels item)
-    (map #(%) rules)))
-
-
 ; --------------------------------------------------------------
 ; defining rules
 
@@ -58,3 +30,32 @@
 (defn rule-not [rule-output]
   "Negation can be turned into a construction with the success/failure message (?)"
   (map #(assoc % :success (rule-not-tbl (:success %))) rule-output))
+
+
+; -----------------------------------------------------------
+; shoveling in
+;
+; for now: check all rules at every shovel-in (if so configured)
+; later on: analyze to see when which kinds of facts about the state
+;           are accessed, and make a map from those to their containing goals
+;           and then map all those goals to all their containing goals
+;           so map an expression to a list of containing goals
+
+;           hence make the (state-fact .. macro)
+;           register its structures with that registry
+
+; 
+; one can define shovel-rules that all get called on the incoming shoveled item
+; using doseq
+; i bet this is some kind of inbuilt thing and has a real name:
+(defn giaku-foreach [funs item]
+  "Applies a seq of functions to an item. Used for side-effects."
+  (doseq [f funs]
+    (f item)))
+
+(defn shovel-in [item shovels rules]
+  "Assert (shovel) attributes of new item. Then check all rules and return their success/failure messages."
+  (do
+    (giaku-foreach shovels item)
+    (map #(%) rules)))
+
