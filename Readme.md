@@ -10,11 +10,11 @@ Once that is more or less built, I'll develop a Clojure and a server-side JavaSc
 
 ### Building a logical debugger
 
- Next it would be interesting whether one could integrate herpderp into a debugging-server setup, this should be rather easy for node.js using the V8 [debugging protocoll](http://code.google.com/p/v8/wiki/DebuggerProtocol), get further info from the [wiki](http://code.google.com/p/v8/wiki/AddDebuggerSupport) and the node-inspector [source](https://github.com/dannycoates/node-inspector/blob/master/lib/debugger.js).
+Next it would be interesting whether one could integrate herpderp into a debugging-server setup, this should be rather easy for node.js using the V8 [debugging protocoll](http://code.google.com/p/v8/wiki/DebuggerProtocol), get further info from the [wiki](http://code.google.com/p/v8/wiki/AddDebuggerSupport) and the node-inspector [source](https://github.com/dannycoates/node-inspector/blob/master/lib/debugger.js).
 
- ### Code quality
+### Code quality
 
- I am building this partially to gain experience with the core.logic framework. I come more from a Prolog-background, hence I'm unfamiliar with many of the appropriate Clojure core.logic, or even Lisp idioms. Friendly pointers are much appreciated!
+I am building this partially to gain experience with the core.logic framework. I come more from a Prolog-background, hence I'm unfamiliar with many of the appropriate Clojure core.logic, or even Lisp idioms. Friendly pointers are much appreciated!
 
 ## License
 
