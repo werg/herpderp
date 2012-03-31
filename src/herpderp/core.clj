@@ -3,19 +3,19 @@
   (:use clojure.core.logic))
 
 
-(defn run-rule [rulename item]
-  (let 
-    [result (run 1 [q]
-              (fresh [suc]
-                (rulename item suc) 
-                (== q {:item item :success suc})))]
-    (first result)))
+; (defn run-rule [rulename item]
+;   (let 
+;     [result (run 1 [q]
+;               (fresh [suc]
+;                 (rulename item suc) 
+;                 (== q {:item item :success suc})))]
+;     (first result)))
 
 
-(defmacro defrule [rulename head & body]
-  `(defna ~rulename [~head succ#]
-    ([~head :pass] ~@body)
-    ([~head :fail])))
+; (defmacro defrule [rulename head & body]
+;   `(defna ~rulename [~head succ#]
+;     ([~head :pass] ~@body)
+;     ([~head :fail])))
 
 
 ; for now: check all rules at every shovel-in (if so configured)
@@ -42,7 +42,7 @@
   "Assert (shovel) attributes of new item. Then check all rules and return their success/failure messages."
   (do
     (giaku-foreach shovels item)
-    (map #(%) rules))
+    (map #(%) rules)))
 
 ; a rule has a head/body construction
 ; or rather: 
@@ -51,30 +51,32 @@
 ; these rules get checked on every shovel.
 ; they can rely on vanilla core.logic relations for their inferences
 
-(defn run-rule [head body]
-  "Run a rule with head and body, where head and body are defne's."
-  (run* [q]
-    (fresh [r]
-      (conda 
-        [(head r) (body r) (== q {:data r :success :pass})]
-        [(head r)          (== q {:data r :success :fail})]))))
+; (defn _run-rule [head body]
+;   "Run a rule with head and body, where head and body are defne's."
+;   (run* [q]
+;     (fresh [r]
+;       (conda 
+;         [(head r) (body r) (== q {:data r :success :pass})]
+;         [(head r)          (== q {:data r :success :fail})]))))
 
 (defmacro defrule [nom [& varvec] head-expr body-expr]
   "A rule is a logical implication: head-expr => body-expr.
    If the condition head-expr is fulfilled, body is evaluated and logic variables specified in the varvector are shared between head and body."
-  `(do
-    (defne he# [~@varvec] ([~head-expr]))
-    (defne be# [~@varvec] ([~body-expr]))
-    (defn ~nom (run-rule he# be#))
+  `(defn ~nom [] 
+      (run* [q#]
+        (fresh [~@varvec]
+          (conda 
+            [~head-expr ~body-expr (== q# {:data [~@varvec] :success :pass})]
+            [~head-expr            (== q# {:data [~@varvec] :success :fail})])))
     ; TODO: also register the rule with the suite
     ))
 
 ; TODO: consider actually not to put in head/body in as defne's, rather leave them as expressions
 ; because it's stupid that head and tail can't share vars? actually they can't anyway (?), just by the hierarchical structure. so maybe it's ok?
 
-(def rule-not-ttl
+(def rule-not-tbl
   {:pass :fail :fail :pass})
 
 (defn rule-not [rule-output]
   "Negation can be turned into a construction with the success/failure message (?)"
-  (map (assoc % :success (rule-not-ttl (:success %))) rule-output))
+  (map #(assoc % :success (rule-not-tbl (:success %))) rule-output))
