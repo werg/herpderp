@@ -26,9 +26,12 @@
 (defrel t< e1 e2)
 
 (defn precedes [e1 e2]
+  "A transitive relation over temporal precedence."
   (conde
     [(t< e1 e2)]
-    [(fresh [e3] )]))
+    [(fresh [e3]
+      (t< e1 e3) 
+      (precedes e3 e2))]))
 
 (defn precincides [e1 e2]
   (conde
