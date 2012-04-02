@@ -13,93 +13,115 @@
 ; we need some sort of core.logic multimethod
 
 ; beginning and end timestamps
-(defrel begin-ts ^:index event ^:index stamp)
-(defrel end-ts ^:index event ^:index stamp)
 
-;(defne time-of)
+; basic relations are
+; (precedes e1 e2)
+; (coincide e1 e2)
+; todo: how to include :about n ? (metadata?)
 
-(defne before [e1 e2]
-  ([e1 e2] 
-    (fresh [t1 t2] 
-      (end-ts e1 t1) 
-      (begin-ts e2 t2) 
-      (< t1 t2))))
+; probably these relations are driven by a partial order
+; so precedes is a transitive relation
 
-(defne after [e1 e2]
-  ([e1 e2] (before e2 e1)))
+; define a basic relation
+(defrel t< e1 e2)
 
-(defne starts-before [e1 e2]
-  ([e1 e2]
-    (fresh [t1 t2]
-      (begin-ts e1 t1)
-      (begin-ts e2 t2)
-      (< t1 t2))))
+(defn precedes [e1 e2]
+  (conde
+    [(t< e1 e2)]
+    [(fresh [e3] )]))
 
-(defne starts-after [e1 e2]
-  ([e1 e2] (starts-before e2 e1)))
+(defn precincides [e1 e2]
+  (conde
+    [precedes e1 e2]
+    [coincide e1 e2]))
 
-(defne ends-before [e1 e2]
-  ([e1 e2]
-    (fresh [t1 t2]
-      (end-ts e1 t1)
-      (end-ts e2 t2)
-      (< t1 t2))))
+; -----------------------------------------------------------
+; relations of states
 
-(defne ends-after [e1 e2]
-  ([e1 e2] (ends-before e2 e1)))
+(defn before [s1 s2]
+  (fresh [e1 e2] 
+    (end s1 e1)
+    (begin s2 e2)
+    (precedes e1 e2)))
 
-(defne starts-during [e1 e2]
-  ([e1 e2] 
-    (fresh [ts1 ts2 te2] 
-      (begin-ts e1 ts1)
-      (begin-ts e2 ts2)
-      (end-ts e2 te2)
-      (>= ts1 ts2)
-      (>= te2 ts1)))))
+(defn after [s1 s2]
+  (before s2 s1))
 
-(defne ends-during [e1 e2]
-  ([e1 e2] 
-    (fresh [te1 ts2 te2] 
-      (end-ts e1 te1)
-      (begin-ts e2 ts2)
-      (end-ts e2 te2)
-      (>= te1 ts2)
-      (>= te2 te1)))))
 
-(defne during [e1 e2]
-  ([e1 e2] (starts-during e1 e2) (ends-during e1 e2)))
+(defn starts-before [s1 s2]
+  (fresh [e1 e2]
+    (begin s1 e1)
+    (begin s2 e2)
+    (precedes e1 e2)))
+
+(defn starts-after [s1 s2]
+  (starts-before s2 s1))
+
+(defn ends-before [s1 s2]
+  (fresh [e1 e2]
+    (end s1 e1)
+    (end s2 e2)
+    (precedes e1 e2)))
+
+(defn ends-after [s1 s2]
+  (ends-before s2 s1))
+
+(defn starts-during [s1 s2]
+  (fresh [es1 es2 ee2] 
+    (begin s1 es1)
+    (begin s2 es2)
+    (end s2 ee2)
+    (precincides es2 es1)
+    (precincides es1 ee2)))
+
+(defn ends-during [s1 s2]
+  (fresh [ee1 es2 ee2] 
+    (end s1 ee1)
+    (begin s2 es2)
+    (end s2 ee2)
+    (precincides es2 ee1)
+    (precincides ee1 ee2)))
+
+(defn during [s1 s2]
+  (starts-during s1 s2) (ends-during s1 s2))
 
 ; this would really profit from some sort of :about modifier
 ; problem is: defne doesn't accept variable number of arguments ?
-(defne until [e1 e2]
-  ([e1 e2] (fresh [t]
-    (end-ts e1 t)
-    (begin-ts e2 t))))
+; we might want to put :about into the metadata
+(defn until [s1 s2]
+  (fresh [e1 e2]
+    (end s1 e1)
+    (begin s2 e2)
+    (coincide e1 e2)))
 
-(defne from-on [e1 e2]
-  ([e1 e2] (until e2 e1)))
+(defn from-on [s1 s2]
+  (until s2 s1))
 
-(defne synchronous [e1 e2]
-  ([e1 e2]
-    (fresh [ts te]
-      (begin-ts e1 ts)
-      (begin-ts e2 ts)
-      (end-ts e1 te)
-      (end-ts e2 te))))
+(defn synchronous [s1 s2]
+  (fresh [es1 es2 ee1 ee2]
+    (begin s1 es1)
+    (begin s2 es2)
+    (end s1 ee1)
+    (end s2 ee2)
+    (coincide es1 es2)
+    (coincide ee1 ee2)))
 
-(defne timepoint [e p]
-  "Holds for events that have no temporal expansion."
-  ([e p] (begin-ts e p) (end-ts e p)))
+(defn timepoint [s]
+  "Holds for states that have no temporal expansion."
+  (fresh [es ee]
+    (begin s es)
+    (end s ee)
+    (coincide ee es)))
 
-(defne timeline [e]
-  "Holds for events that start before they end."
-  ([e] 
-    (fresh [ts te]
-      (begin-ts e ts)
-      (end-ts e te)
-      (< ts te))))
+(defn timeline [s]
+  "Holds for states that start before they end."
+  (fresh [es ee]
+    (begin s es)
+    (end s ee)
+    (precedes es ee)))
 
-(defne time-consistent [e]
+(defn time-consistent [s]
   "Excludes situations where end time lies before starting time."
-  ([e] (fresh [p] (timepoint [e p])))
-  ([e] (timeline e)))
+  (conde
+    [(timepoint s)]
+    [(timeline s)])
