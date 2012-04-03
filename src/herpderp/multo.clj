@@ -8,14 +8,32 @@
 
    Potential alternatives include dynamic predicates, reading goals from a seq
    at runtime. This option currently does not seem very compatible with the macro
-   setup in core.logic."
+   setup in core.logic.
+
+
+   (use 'clojure.core.logic)
+   (use 'herpderp.multo)
+
+   (defmulte mymulte [a b])
+
+   (defclause mymulte [a [:bar]] (== a :foo))
+   (run* [q] (fresh [r s] (mymulte r s) (== q [r s])))
+   ;([:foo [:bar]])
+
+   (defclause mymulte [:baz b] (== b 42))
+   (run* [q] (fresh [r s] (mymulte r s) (== q [r s])))
+   ;([:baz 42] [:foo [:bar]])
+   ; order may differ (it's a set by design)
+  "
   (:refer-clojure :exclude [==])
   (:use clojure.core.logic))
 
 
 ; todo: treat docstrings appropriately
 (defmacro defmulte [nom args]
-  "Initialize an empty multi-predicate. (Clauses can be added at runtime using defclause.)"
+  "Initialize an empty multi-predicate. (Clauses can be added at runtime using defclause.)
+
+   (defmulte mymulte [a b])"
   (let [unsuc   #'u#
         goalset (ref '#{})]
     (list #'defne
@@ -26,7 +44,9 @@
 
 
 (defmacro defclause [nom  & body]
-  "Add a new clause to a multi-predicate. Unfortunately uses eval."
+  "Add a new clause to a multi-predicate. Unfortunately uses eval.
+
+  (defclause mymulte [a [:bar]] (== a :foo))"
   (let [unsuc #'u#]
     `(let [~'meta-data (meta (var ~nom))
            ~'args      (first (~'meta-data :arglists))
