@@ -1,31 +1,42 @@
+(ns herpderp.multo
+  "A first draft of multi-predicates for core.logic.
+   Enables attaching additional clauses at runtime.
 
-; have a sequence of our-goals, sitting in an atom, or a ref
-; one can add to it
+   In the current implementation goals follow the pattern of being extra defne clauses;
+   Every time a new clause is added the var cointaining the predicate 
+   is overwritten by a new defne invocation.
 
-; goals contain entries like this: 
-; ((== q# ~head) ~@body))
+   Potential alternatives include dynamic predicates, reading goals from a seq
+   at runtime. This option currently does not seem very compatible with the macro
+   setup in core.logic."
+  (:refer-clojure :exclude [==])
+  (:use clojure.core.logic))
 
 
-; (defmacro apply-macro [nom body]
-;   `(~nom ~@body))
-; (let [cf (apply-macro conde )]
-
-
-(defmacro update-multo-fn [nom]
-  (let [goalset (meta nom :goalset)
-        args (meta nom :arg-spec)]
-    `(defne ~nom ~args ~@goalset)))
-  ;(swap! (meta nom :goalfun) (meta nom :reltype))) ;; argh too tired, make it so that it behaves like a defne possibly use core.logic legacy
-; args?
-
+; todo: treat docstrings appropriately
 (defmacro defmulte [nom args]
-  ; create the empty atom-set of goals
-  ; output a defn which retrieves the
-  ; cached goals
-  `(do
-    (def ^{:goalset #{} :arg-spec ~args} ~nom)
-    (update-multo-fn ~nom)))
+  "Initialize an empty multi-predicate. (Clauses can be added at runtime using defclause.)"
+  (let [unsuc   #'u#
+        goalset (ref '#{})]
+    (list #'defne
+      (with-meta nom {:multo {:goalset goalset :goaltype #'defne}})
+      args
+      ; attach trailing failing clause
+      (list args unsuc))))
 
-(defn defmetho [nom & body]
-  (swap! (meta nom :goalset) into body)
-  (update-multo-fn nom))
+
+(defmacro defclause [nom  & body]
+  "Add a new clause to a multi-predicate. Unfortunately uses eval."
+  (let [unsuc #'u#]
+    `(let [~'meta-data (meta (var ~nom))
+           ~'args      (first (~'meta-data :arglists))
+           ~'goalset   ((:multo ~'meta-data) :goalset)
+           ~'kind      ((:multo ~'meta-data) :goaltype)]
+      ; we do a dosync in order to get a side-effect whenever the goalset gets updated ;)
+      (dosync
+        (alter ~'goalset into (list '~body ))
+        (eval 
+          (concat 
+            (list ~'kind (with-meta '~nom ~'meta-data) ~'args)
+            (deref ~'goalset) 
+            (list (list ~'args ~unsuc))))))))
