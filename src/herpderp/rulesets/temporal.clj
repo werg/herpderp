@@ -4,15 +4,8 @@
         [clojure.core.logic]
         [clojure.core.logic.arithmetic]))
 
-; implement all the before / after during stuff
+; implements all the before / after during stuff
 ; make it so that it's extensible to various event formats
-
-; so you should include id's in defshovel
-; and include ways to attach several shovels to one relation
-
-; we need some sort of core.logic multimethod
-
-; beginning and end timestamps
 
 ; basic relations are
 ; (precedes e1 e2)
